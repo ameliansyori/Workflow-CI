@@ -1,54 +1,39 @@
-name: MLflow Automated Retraining CI
+import pandas as pd
+import mlflow
+import mlflow.sklearn
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score, classification_report
 
-on:
-  push:
-    branches: [ "main", "master" ]
-  pull_request:
-    branches: [ "main", "master" ]
+def train_base_model():
+    print("=== STARTING BASE MODELLING WITH MLFLOW AUTOLOG ===")
+    
+    mlflow.set_experiment("Heart_Disease_Experiment")
+    mlflow.autolog()
+    
+    # 1. 🔥 FIX UTAMA: Langsung membaca file utama hasil preprocessing
+    main_data = pd.read_csv('dataset_preprocessing.csv')
+    main_data = main_data.dropna()
+    
+    # Split data otomatis 80:20 secara instan
+    train_data = main_data.sample(frac=0.8, random_state=42)
+    test_data = main_data.drop(train_data.index)
+    
+    # Memisahkan fitur dan target
+    X_train = train_data.drop(columns=['HeartDisease'])
+    y_train = train_data['HeartDisease']
+    X_test = test_data.drop(columns=['HeartDisease'])
+    y_test = test_data['HeartDisease']
+    
+    # 2. Mulai Run MLflow Tracking
+    with mlflow.start_run(run_name="Baseline_Random_Forest"):
+        model = RandomForestClassifier(random_state=42)
+        model.fit(X_train, y_train)
+        
+        y_pred = model.predict(X_test)
+        acc = accuracy_score(y_test, y_pred)
+        print(f"-> [SUKSES] Model Dasar Selesai Dilatih. Akurasi Uji: {acc:.4f}")
+        print("\n=== CLASSIFICATION REPORT ===")
+        print(classification_report(y_test, y_pred))
 
-jobs:
-  mlflow-retraining-pipeline:
-    runs-on: ubuntu-latest
-
-    steps:
-    # 1. Run actions/checkout (Di-update ke v4 biar aman)
-    - name: Run actions/checkout@v4
-      uses: actions/checkout@v4
-
-    # 2. Set up Python 3.12.7 (Di-update ke v5 biar matching)
-    - name: Set up Python 3.12.7
-      uses: actions/setup-python@v5
-      with:
-        python-version: "3.12.7"
-
-    # 3. Check Operating System and Python Env
-    - name: Check Env
-      run: |
-        python --version
-        pip --version
-
-    # 4. Install dependencies yang dibutuhkan MLflow
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install mlflow psutil flask numpy pandas scikit-learn
-
-    # 5. 🔥 EKSEKUSI RETRAINING REKOMENDASI REVIEWER
-    - name: Run mlflow project
-      run: |
-        echo "Memulai proses retraining otomatis menggunakan perintah mlflow run..."
-        mlflow run MLProject --no-conda
-
-    # 6. Mengambil run_id MLflow terbaru hasil training di atas
-    - name: Get latest MLflow run_id
-      run: |
-        echo "Mengekstrak Run ID dari experiment..."
-        RUN_ID=$(ls -t mlruns/0/ | head -n 1)
-        echo "Latest Run ID found: $RUN_ID"
-
-    # 7. 🌟 SYARAT SKILLED: Upload Artefak Model (SUDAH FIX v4!)
-    - name: Upload to GitHub
-      uses: actions/upload-artifact@v4
-      with:
-        name: retrained-mlflow-model
-        path: mlruns/0/
+if __name__ == '__main__':
+    train_base_model()
