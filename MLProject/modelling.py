@@ -10,14 +10,15 @@ def train_base_model():
     mlflow.set_experiment("Heart_Disease_Experiment")
     mlflow.autolog()
     
-    # 1. 🔥 PERBAIKAN PATH: Karena file CSV sudah satu folder dengan modelling.py,
-    # kita langsung panggil nama filenya secara langsung!
-    train_data = pd.read_csv('train_clean.csv')
-    test_data = pd.read_csv('test_clean.csv')
+    # 1. 🔥 FIX DARURAT: Membaca file utama hasil preprocessing
+    main_data = pd.read_csv('dataset_preprocessing.csv')
     
-    # HOTFIX: Buang baris bolong (NaN) yang bikin eror validate data
-    train_data = train_data.dropna()
-    test_data = test_data.dropna()
+    # Bersihkan baris kosong (NaN) jika ada
+    main_data = main_data.dropna()
+    
+    # Split data otomatis secara instan (80% Train, 20% Test)
+    train_data = main_data.sample(frac=0.8, random_state=42)
+    test_data = main_data.drop(train_data.index)
     
     # Memisahkan fitur dan target
     X_train = train_data.drop(columns=['HeartDisease'])
