@@ -11,13 +11,13 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    # 1. Set up job & Run actions/checkout@v3
-    - name: Run actions/checkout@v3
-      uses: actions/checkout@v3
+    # 1. Run actions/checkout (Di-update ke v4 biar aman)
+    - name: Run actions/checkout@v4
+      uses: actions/checkout@v4
 
-    # 2. Set up Python 3.12.7 (Disamain dengan spek Dicoding lo)
+    # 2. Set up Python 3.12.7 (Di-update ke v5 biar matching)
     - name: Set up Python 3.12.7
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: "3.12.7"
 
@@ -33,7 +33,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install mlflow psutil flask numpy pandas scikit-learn
 
-    # 5. 🔥 EKSEKUSI RETRAINING REKOMENDASI REVIEWER (Mekanisme MLflow Project)
+    # 5. 🔥 EKSEKUSI RETRAINING REKOMENDASI REVIEWER
     - name: Run mlflow project
       run: |
         echo "Memulai proses retraining otomatis menggunakan perintah mlflow run..."
@@ -46,9 +46,9 @@ jobs:
         RUN_ID=$(ls -t mlruns/0/ | head -n 1)
         echo "Latest Run ID found: $RUN_ID"
 
-    # 7. 🌟 SYARAT SKILLED: Menyimpan/Upload Artefak Model ke GitHub Repo
+    # 7. 🌟 SYARAT SKILLED: Upload Artefak Model (SUDAH FIX v4!)
     - name: Upload to GitHub
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: retrained-mlflow-model
         path: mlruns/0/
